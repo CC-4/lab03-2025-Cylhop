@@ -69,6 +69,17 @@ public class Parser {
 			}
 			*/
 
+            if(id == Token.NUMBER){
+                operandos.push(this.tokens.get(this.next).getVal());
+            }else if(id == Token.SEMI){
+                while (!operandos.empty())
+                {
+                    popOp();
+                }
+            }else if(id != Token.LPAREN && id !=Token.RPAREN ){
+                pushOp(this.tokens.get(this.next));
+            }
+
             this.next++;
             return true;
         }
@@ -82,10 +93,20 @@ public class Parser {
         /* El codigo de esta seccion se explicara en clase */
 
         switch(op.getId()) {
-        	case Token.PLUS:
-        		return 1;
-        	case Token.MULT:
-        		return 2;
+            case Token.PLUS:
+            case Token.MINUS:
+                return 5;
+            case Token.MULT:
+            case Token.DIV:
+            case Token.MOD:
+                return 4;
+            case Token.EXP:
+                return 3;
+            case Token.UNARY:
+                return 2;
+            case Token.LPAREN:
+            case Token.RPAREN:
+                return 1;
         	default:
         		return -1;
         }
@@ -95,6 +116,8 @@ public class Parser {
         Token op = this.operadores.pop();
 
         /* TODO: Su codigo aqui */
+
+
 
         /* El codigo de esta seccion se explicara en clase */
 
@@ -126,7 +149,30 @@ public class Parser {
         	// Comparamos las precedencias y decidimos si hay que operar
         	// Es posible que necesitemos un ciclo aqui, una vez tengamos varios niveles de precedencia
         	// Al terminar operaciones pendientes, guardamos op en stack
+        if(operandos.empty()){
+            operadores.push(op);
+            return;
+        }
 
+        int precNuevo = pre(op);
+        int precTope = pre(operadores.peek());
+
+        if(op.equals(Token.EXP))
+        {
+            while (!operadores.empty()&& precTope > precNuevo){
+                popOp();
+                if(!operadores.empty()){
+                    precTope = pre(operadores.peek());
+                }
+            }
+        }else{
+            while (!operadores.empty() && precTope > precNuevo){
+                popOp();
+                if(!operadores.empty()){
+                    precTope=pre(operadores.peek());
+                }
+            }
+        }
     }
 
     private boolean S() {
