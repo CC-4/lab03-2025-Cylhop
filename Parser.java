@@ -46,7 +46,7 @@ public class Parser {
     // Si si avanza el puntero es decir lo consume.
     private boolean term(int id) {
         if(this.next < this.tokens.size() && this.tokens.get(this.next).equals(id)) {
-            
+
             // Codigo para el Shunting Yard Algorithm
             /*
             if (id == Token.NUMBER) {
@@ -60,7 +60,7 @@ public class Parser {
 				while (!this.operadores.empty()) {
 					popOp();
 				}
-				
+
 			} else {
 				// Encontramos algun otro token, es decir un operador
 				// Lo guardamos en el stack de operadores
@@ -69,16 +69,6 @@ public class Parser {
 			}
 			*/
 
-            if(id == Token.NUMBER){
-                operandos.push(this.tokens.get(this.next).getVal());
-            }else if(id == Token.SEMI){
-                while (!operandos.empty())
-                {
-                    popOp();
-                }
-            }else if(id != Token.LPAREN && id !=Token.RPAREN ){
-                pushOp(this.tokens.get(this.next));
-            }
 
             this.next++;
             return true;
@@ -95,19 +85,19 @@ public class Parser {
         switch(op.getId()) {
             case Token.PLUS:
             case Token.MINUS:
-                return 5;
+                return 1; // menor precedencia binaria
             case Token.MULT:
             case Token.DIV:
             case Token.MOD:
-                return 4;
-            case Token.EXP:
-                return 3;
-            case Token.UNARY:
                 return 2;
+            case Token.EXP:
+                return 3; // potencia
+            case Token.UNARY:
+                return 4; // unario
             case Token.LPAREN:
             case Token.RPAREN:
-                return 1;
-        	default:
+                return 5;
+            default:
         		return -1;
         }
     }
@@ -140,7 +130,7 @@ public class Parser {
         /* TODO: Su codigo aqui */
 
         /* Casi todo el codigo para esta seccion se vera en clase */
-    	
+
     	// Si no hay operandos automaticamente ingresamos op al stack
 
     	// Si si hay operandos:
@@ -149,30 +139,7 @@ public class Parser {
         	// Comparamos las precedencias y decidimos si hay que operar
         	// Es posible que necesitemos un ciclo aqui, una vez tengamos varios niveles de precedencia
         	// Al terminar operaciones pendientes, guardamos op en stack
-        if(operandos.empty()){
-            operadores.push(op);
-            return;
-        }
 
-        int precNuevo = pre(op);
-        int precTope = pre(operadores.peek());
-
-        if(op.equals(Token.EXP))
-        {
-            while (!operadores.empty()&& precTope > precNuevo){
-                popOp();
-                if(!operadores.empty()){
-                    precTope = pre(operadores.peek());
-                }
-            }
-        }else{
-            while (!operadores.empty() && precTope > precNuevo){
-                popOp();
-                if(!operadores.empty()){
-                    precTope=pre(operadores.peek());
-                }
-            }
-        }
     }
 
     private boolean S() {
@@ -180,8 +147,64 @@ public class Parser {
     }
 
     private boolean E() {
-        return false;
+        if (!T()) return false;
+
+        while (true) {
+            if (term(Token.PLUS)) {
+                if (!T()) return false;
+            } else if (term(Token.MINUS)) {
+                if (!T()) return false;
+            } else {
+                break;
+            }
+        }
+        return true;
     }
 
     /* TODO: sus otras funciones aqui */
+    private boolean F() {
+        if (!G()) return false;
+
+        while (term(Token.EXP)) {
+            if (!G()) return false;
+        }
+        return true;
+    }
+
+    private boolean G() {
+        // Manejar negativos unarios (puede haber varios: --3 = 3)
+        while (term(Token.MINUS)) {
+            // Consumir los operadores unarios
+        }
+
+        return H();
+    }
+
+    private boolean H() {
+        if (term(Token.NUMBER)) {
+            return true;
+        } else if (term(Token.LPAREN)) {
+            if (!E()) return false;
+            return term(Token.RPAREN);
+        }
+        return false;
+    }
+
+    private boolean T() {
+        if (!F()) return false;
+
+        while (true) {
+            if (term(Token.MULT)) {
+                if (!F()) return false;
+            } else if (term(Token.DIV)) {
+                if (!F()) return false;
+            } else if (term(Token.MOD)) {
+                if (!F()) return false;
+            } else {
+                break;
+            }
+        }
+        return true;
+    }
+
 }
